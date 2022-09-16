@@ -1,6 +1,7 @@
 var app = require('http').createServer(resposta);
 var fs = require('fs');
 var io = require('socket.io')(app);
+var usuarios = [];
 
 app.listen(3000);
 console.log("Aplicação está em execução...");
@@ -25,13 +26,21 @@ function resposta (req, res) {
      );
 }
 io.on("connection", function(socket){
-    socket.on("enviar mensagem", function(mensagem_enviada, callback){
-        mensagem_enviada = "[ " + pegarDataAtual() + " ]: " + mensagem_enviada;
-
-        io.sockets.emit("atualizar mensagens", mensagem_enviada);
-        callback();
+    socket.on("entrar", function(apelido, callback){
+             if(!(apelido in usuarios)){
+    socket.apelido = apelido;
+                  usuarios[apelido] = socket;
+                  callback(true);
+             }else{
+                  callback(false);
+             }
+         });
+         socket.on("enviar mensagem", function(mensagem_enviada, callback){
+             mensagem_enviada = "[ " + pegarDataAtual() + " ] " + socket.apelido + " diz: " + mensagem_enviada;
+             io.sockets.emit("atualizar mensagens", mensagem_enviada);
+             callback();
+         });
     });
-});
 function pegarDataAtual(){
  var dataAtual = new Date();
  var dia = (dataAtual.getDate()<10 ? '0' : '') + dataAtual.getDate();
